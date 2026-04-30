@@ -10,8 +10,9 @@ const USER_AGENTS = [
 ];
 
 const randomUA = () => USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
+
+const PORT = process.env.PORT || 3000;   // ← این خط خیلی مهم است
 
 export default async function handler(req, res) {
   if (!TARGET_URL) {
@@ -20,7 +21,7 @@ export default async function handler(req, res) {
   }
 
   try {
-    await sleep(Math.random() * 25 + 8); // delay کوچک و تصادفی
+    await sleep(Math.random() * 20 + 10);
 
     const targetUrl = TARGET_URL + req.url;
 
@@ -29,7 +30,7 @@ export default async function handler(req, res) {
 
     for (const [key, value] of Object.entries(req.headers)) {
       const k = key.toLowerCase();
-      if (["host", "connection", "upgrade", "x-railway", "x-vercel"].includes(k)) continue;
+      if (["host", "connection", "upgrade", "x-railway"].includes(k)) continue;
       headers[k] = Array.isArray(value) ? value.join(", ") : value;
     }
 
@@ -42,12 +43,12 @@ export default async function handler(req, res) {
     const fetchOpts = { 
       method, 
       headers, 
-      redirect: "manual",
-      duplex: hasBody ? "half" : undefined 
+      redirect: "manual"
     };
 
     if (hasBody) {
       fetchOpts.body = Readable.toWeb(req);
+      fetchOpts.duplex = "half";
     }
 
     const upstream = await fetch(targetUrl, fetchOpts);
@@ -73,3 +74,10 @@ export default async function handler(req, res) {
     }
   }
 }
+
+// راه‌اندازی سرور روی پورت Railway
+console.log(`Starting relay on port ${PORT}`);
+Bun.serve({
+  port: PORT,
+  fetch: handler
+});

@@ -1,0 +1,12 @@
+{
+  "name": "xhttp-relay-railway",
+  "version": "1.2.0",
+  "description": "Stealth XHTTP Relay for Railway",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

@@ -4,25 +4,17 @@ import http from "node:http";
 
 const TARGET_URL = (process.env.TARGET_URL || "").replace(/\/$/, "");
 
-const USER_AGENTS = [
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36",
-  "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:135.0) Gecko/20100101 Firefox/135.0",
-  "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/133.0.0.0 Safari/537.36"
-];
-
-const randomUA = () => USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
-const sleep = (ms) => new Promise(r => setTimeout(r, ms));
-
 const PORT = process.env.PORT || 3000;
 
 const server = http.createServer(async (req, res) => {
   if (!TARGET_URL) {
-    res.writeHead(500);
+    res.writeHead(500, { "Content-Type": "text/plain" });
     return res.end("Error: TARGET_URL environment variable is not set");
   }
 
   try {
-    await sleep(Math.random() * 20 + 10);   // delay کوچک برای stealth
+    // delay خیلی کوچک برای جلوگیری از تشخیص
+    await new Promise(r => setTimeout(r, Math.random() * 15 + 5));
 
     const targetUrl = TARGET_URL + req.url;
 
@@ -35,7 +27,6 @@ const server = http.createServer(async (req, res) => {
       headers[k] = Array.isArray(value) ? value.join(", ") : value;
     }
 
-    headers["user-agent"] = randomUA();
     if (clientIp) headers["x-forwarded-for"] = clientIp;
 
     const method = req.method;
@@ -77,5 +68,5 @@ const server = http.createServer(async (req, res) => {
 });
 
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Relay server listening on port ${PORT}`);
+  console.log(`✅ Relay server is running on port ${PORT}`);
 });

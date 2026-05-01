@@ -1,5 +1,6 @@
 import { Readable } from "node:stream";
 import { pipeline } from "node:stream/promises";
+import http from "node:http";
 
 const TARGET_URL = (process.env.TARGET_URL || "").replace(/\/$/, "");
 
@@ -12,16 +13,16 @@ const USER_AGENTS = [
 const randomUA = () => USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 const sleep = (ms) => new Promise(r => setTimeout(r, ms));
 
-const PORT = process.env.PORT || 3000;   // ← این خط خیلی مهم است
+const PORT = process.env.PORT || 3000;
 
-export default async function handler(req, res) {
+const server = http.createServer(async (req, res) => {
   if (!TARGET_URL) {
-    res.statusCode = 500;
+    res.writeHead(500);
     return res.end("Error: TARGET_URL environment variable is not set");
   }
 
   try {
-    await sleep(Math.random() * 20 + 10);
+    await sleep(Math.random() * 20 + 10);   // delay کوچک برای stealth
 
     const targetUrl = TARGET_URL + req.url;
 
@@ -53,7 +54,7 @@ export default async function handler(req, res) {
 
     const upstream = await fetch(targetUrl, fetchOpts);
 
-    res.statusCode = upstream.status || 502;
+    res.writeHead(upstream.status || 502);
 
     for (const [k, v] of upstream.headers) {
       if (k.toLowerCase() === "transfer-encoding") continue;
@@ -69,15 +70,12 @@ export default async function handler(req, res) {
   } catch (err) {
     console.error("Relay Error:", err.message);
     if (!res.headersSent) {
-      res.statusCode = 502;
+      res.writeHead(502);
       res.end("Bad Gateway");
     }
   }
-}
+});
 
-// راه‌اندازی سرور روی پورت Railway
-console.log(`Starting relay on port ${PORT}`);
-Bun.serve({
-  port: PORT,
-  fetch: handler
+server.listen(PORT, "0.0.0.0", () => {
+  console.log(`Relay server listening on port ${PORT}`);
 });
